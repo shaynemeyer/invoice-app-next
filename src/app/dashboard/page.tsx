@@ -13,7 +13,11 @@ import { Button } from '@/components/ui/button';
 import { CirclePlus } from 'lucide-react';
 import Link from 'next/link';
 
-function DashboardPage() {
+import { sql } from 'drizzle-orm';
+import { db } from '@/db';
+
+async function DashboardPage() {
+  const result = await db.execute(sql`SELECT current_database()`);
   return (
     <main className="flex flex-col justify-center text-center max-w-5xl mx-auto my-12">
       <div className="flex justify-between">
@@ -26,6 +30,7 @@ function DashboardPage() {
           </Button>
         </p>
       </div>
+      {JSON.stringify(result)}
 
       <Table>
         <TableCaption>A list of your recent invoices.</TableCaption>
