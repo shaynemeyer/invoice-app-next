@@ -1,31 +1,33 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import React, { SyntheticEvent, useState } from 'react';
-import { createAction } from '@/app/actions/invoice';
+import Form from "next/form";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import React, { SyntheticEvent, useState } from "react";
+import { createAction } from "@/app/actions/invoice";
+import SubmitButton from "@/components/SubmitButton";
 
 function NewInvoicePage() {
-  const [actionState, setActionState] = useState('ready');
+  const [actionState, setActionState] = useState("ready");
 
   async function handleOnSubmit(event: SyntheticEvent) {
-    event.preventDefault();
-    if (actionState === 'pending') return;
-    setActionState('pending');
-
-    const target = event.target as HTMLFormElement;
-    const formData = new FormData(target);
-
-    await createAction(formData);
+    if (actionState === "pending") {
+      event.preventDefault();
+      return;
+    }
+    setActionState("pending");
   }
   return (
     <main className="flex flex-col justify-center max-w-5xl mx-auto my-12">
       <div className="flex justify-between">
         <h1 className="text-3xl font-bold">Create Invoice</h1>
       </div>
-      <form onSubmit={handleOnSubmit} className="grid gap-4 max-w-xs">
+      <Form
+        action={createAction}
+        onSubmit={handleOnSubmit}
+        className="grid gap-4 max-w-xs"
+      >
         <div>
           <Label className="block font-semibold text-sm mb-2" htmlFor="name">
             Billing Name
@@ -53,8 +55,8 @@ function NewInvoicePage() {
           </Label>
           <Textarea id="description" name="description" />
         </div>
-        <Button className="w-full font-semibold">Submit</Button>
-      </form>
+        <SubmitButton />
+      </Form>
     </main>
   );
 }
