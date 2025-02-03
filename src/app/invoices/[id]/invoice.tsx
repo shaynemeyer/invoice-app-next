@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useOptimistic } from "react";
-import { Invoices } from "@/db/schema";
+import { Customers, Invoices } from "@/db/schema";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Container from "@/components/Container";
@@ -27,7 +27,9 @@ import { updateStatusAction, deleteInvoiceAction } from "@/app/actions/invoice";
 import { ChevronDown, Ellipsis, Trash2 } from "lucide-react";
 
 interface InvoiceProps {
-  invoice: typeof Invoices.$inferSelect;
+  invoice: typeof Invoices.$inferSelect & {
+    customer: typeof Customers.$inferSelect;
+  };
 }
 
 function Invoice({ invoice }: InvoiceProps) {
@@ -161,13 +163,13 @@ function Invoice({ invoice }: InvoiceProps) {
             <strong className="block w-28 flex-shrink-0 font-medium text-sm">
               Billing Name
             </strong>
-            <span></span>
+            <span>{invoice.customer.name}</span>
           </li>
           <li className="flex gap-4">
             <strong className="block w-28 flex-shrink-0 font-medium text-sm">
               Billing Email
             </strong>
-            <span></span>
+            <span>{invoice.customer.email}</span>
           </li>
         </ul>
       </Container>
