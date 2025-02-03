@@ -17,19 +17,29 @@ import { db } from "@/db";
 import { Customers, Invoices } from "@/db/schema";
 import { cn } from "@/lib/utils";
 import Container from "@/components/Container";
-import { eq } from "drizzle-orm/sql";
+import { and, eq, isNull } from "drizzle-orm/sql";
 import { auth } from "@clerk/nextjs/server";
 
 async function DashboardPage() {
-  const { userId } = await auth();
+  const { userId, orgId } = await auth();
 
   if (!userId) return;
 
-  const results = await db
-    .select()
-    .from(Invoices)
-    .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
-    .where(eq(Invoices.userId, userId));
+  let results;
+
+  if (orgId) {
+    results = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(eq(Invoices.organizationId, orgId));
+  } else {
+    results = await db
+      .select()
+      .from(Invoices)
+      .innerJoin(Customers, eq(Invoices.customerId, Customers.id))
+      .where(and(eq(Invoices.userId, userId), isNull(Invoices.organizationId)));
+  }
 
   const invoices = results?.map(({ invoices, customers }) => {
     return {
