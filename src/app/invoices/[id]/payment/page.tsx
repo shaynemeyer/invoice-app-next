@@ -9,13 +9,48 @@ import { db } from "@/db";
 import { Button } from "@/components/ui/button";
 import { Check, CreditCard } from "lucide-react";
 import { createPayment } from "@/app/actions/payment";
+import Stripe from "stripe";
+import { updateStatusAction } from "@/app/actions/invoice";
 
-async function PaymentPage({ params }: { params: { id: string } }) {
+const stripe = new Stripe(String(process.env.STRIPE_API_SECRET));
+
+interface PaymentPageProps {
+  params: { id: string };
+  searchParams: {
+    status: string;
+    session_id: string;
+  };
+}
+
+async function PaymentPage({ params, searchParams }: PaymentPageProps) {
   const { id } = await params;
-  const invoiceId = parseInt(id);
+  const invoiceId = Number.parseInt(id);
+
+  const sessionId = searchParams.session_id;
+  const isSuccess = sessionId && searchParams.status === "success";
+  const isCanceled = searchParams.status === "canceled";
+  let isError = isSuccess && !sessionId;
+
+  console.log("isSuccess", isSuccess);
+  console.log("isCanceled", isCanceled);
 
   if (isNaN(invoiceId)) {
     throw new Error("Invalid Invoice ID");
+  }
+
+  if (isSuccess) {
+    const { payment_status } = await stripe.checkout.sessions.retrieve(
+      sessionId
+    );
+
+    if (payment_status !== "paid") {
+      isError = true;
+    } else {
+      const formData = new FormData();
+      formData.append("id", String(invoiceId));
+      formData.append("status", "paid");
+      await updateStatusAction(formData);
+    }
   }
 
   const [result] = await db
@@ -36,11 +71,21 @@ async function PaymentPage({ params }: { params: { id: string } }) {
   return (
     <main className="w-full h-full">
       <Container>
+        {isError && (
+          <p className="bg-red-100 text-sm text-red-800 text-center px-3 py-2 rounded-lg mb-6">
+            Something went wrong, please try again!
+          </p>
+        )}
+        {isCanceled && (
+          <p className="bg-yellow-100 text-sm text-yellow-800 text-center px-3 py-2 rounded-lg mb-6">
+            Payment was canceled, please try again.
+          </p>
+        )}
         <div className="grid grid-cols-2">
           <div>
             <div className="flex justify-between mb-8">
               <h1 className="flex items-center gap-4 text-3xl font-bold">
-                Invoice #{invoice.id}{" "}
+                Invoice #{invoice.id}
                 <Badge
                   className={cn(
                     "rounded-full capitalize",
@@ -61,7 +106,7 @@ async function PaymentPage({ params }: { params: { id: string } }) {
             <h2 className="text-xl font-bold mb-4">Manage Invoice</h2>
             {invoice.status === "open" && (
               <form action={createPayment}>
-                <input type="hidden" name="invoiceId" value={invoice.id} />
+                <input type="hidden" name="id" value={invoice.id} />
                 <Button className="flex gap-2 font-bold bg-green-700">
                   <CreditCard className="w-5 h-auto" />
                   Pay Invoice
